@@ -2,13 +2,13 @@ import numpy as np
 import noisereduce as nr
 import gradio as gr
 from transformers import pipeline
-from scipy.signal import resample  # ✅ for resampling without torchaudio
+from scipy.signal import resample  
 
-# Whisper model
+
 DEFAULT_ASR_MODEL = "openai/whisper-tiny"
 asr = pipeline("automatic-speech-recognition", model=DEFAULT_ASR_MODEL)
 
-TARGET_SR = 16000  # Whisper expects 16kHz
+TARGET_SR = 16000 
 
 def denoise_and_transcribe(audio):
     if audio is None:
@@ -39,7 +39,7 @@ def denoise_and_transcribe(audio):
         cleaned = cleaned / np.max(np.abs(cleaned))
     cleaned = cleaned.astype(np.float32)
 
-    # ✅ Resample if not 16kHz
+   
     if sr != TARGET_SR:
         num_samples = int(len(cleaned) * TARGET_SR / sr)
         cleaned = resample(cleaned, num_samples)
@@ -55,7 +55,6 @@ def denoise_and_transcribe(audio):
     return text, (sr, cleaned)
 
 
-# Gradio UI
 with gr.Blocks() as demo:
     gr.Markdown("# 🎙 Meeting Summarizer\nUpload audio → Clean noise → Get transcript")
 
@@ -70,5 +69,5 @@ with gr.Blocks() as demo:
     run_btn.click(denoise_and_transcribe, inputs=audio_in, outputs=[transcript_out, cleaned_audio_out])
 
 
-if __name__ == "__main__":   # ✅ fixed here
+if __name__ == "__main__":   
     demo.launch()
