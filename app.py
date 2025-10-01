@@ -45,7 +45,6 @@ def denoise_and_transcribe(audio):
             cleaned = resample(cleaned, num_samples).astype(np.float32)
             sr = TARGET_SR
 
-        # ✅ Prevent empty audio error
         if len(cleaned) == 0:
             return "⚠️ Empty audio after processing", None
 
@@ -53,22 +52,21 @@ def denoise_and_transcribe(audio):
         result = asr({"array": cleaned, "sampling_rate": sr})
         text = result.get("text", "").strip()
 
-        # Return transcription + cleaned audio
         return text, (sr, cleaned)
 
     except Exception as e:
         return f"❌ Runtime error: {e}", None
 
 
-# Gradio UI
+# ✅ Gradio UI
 with gr.Blocks() as demo:
-    gr.Markdown("# 🎙 Meeting Summarizer\nRecord or upload → Noise removed → Transcript")
+    gr.Markdown("# 🎙 Meeting Summarizer\nUpload or Record → Noise removed → Transcript")
 
     with gr.Row():
         audio_in = gr.Audio(
-            label="🎤 Upload or Record", 
-            type="numpy", 
-            source="microphone"  # ✅ mic recording works
+            label="🎤 Upload or Record",
+            type="numpy",
+            mode="input"   # ✅ works on older Gradio
         )
         run_btn = gr.Button("Process")
 
