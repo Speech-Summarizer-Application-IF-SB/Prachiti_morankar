@@ -1,3 +1,4 @@
+
 import os
 import numpy as np
 import soundfile as sf
@@ -5,28 +6,35 @@ import noisereduce as nr
 import gradio as gr
 from transformers import pipeline
 
-# Use a smaller model (fast for Spaces CPU)
+# Use small model (works better on free CPU Spaces)
 DEFAULT_ASR_MODEL = "openai/whisper-tiny"
-
-# Load ASR pipeline
 asr = pipeline("automatic-speech-recognition", model=os.environ.get("ASR_MODEL", DEFAULT_ASR_MODEL))
 
 
-def denoise_and_transcribe(audio_data):
+def denoise_and_transcribe(audio):
     """
-    Input: tuple (numpy array, sample rate) from Gradio
-    Output: transcript + cleaned audio
+    audio: tuple (sample_rate, data) or just numpy array depending on Gradio version
+    Returns: transcript + cleaned audio
     """
-    if audio_data is None:
+    if audio is None:
         return "⚠️ No audio provided", None
 
-    data, sr = audio_data  # Gradio gives (numpy array, sample rate)
+    # Handle Gradio input format
+    if isinstance(audio, tuple):
+        sr, data = audio
+    else:
+        # fallback if only array is provided
+        sr = 16000
+        data = audio
+
+    # Ensure float32
+    data = np.array(data, dtype=np.float32)
 
     # Convert stereo → mono if needed
     if data.ndim > 1:
         data = np.mean(data, axis=1)
 
-    # Noise sample from first 0.5s
+    # Take first 0.5s for noise sample
     noise_len = int(0.5 * sr)
     noise_len = min(noise_len, len(data) // 2)
     noise_clip = data[:noise_len]
@@ -34,17 +42,18 @@ def denoise_and_transcribe(audio_data):
     # Noise reduction
     cleaned = nr.reduce_noise(y=data, sr=sr, y_noise=noise_clip)
 
-    # Save cleaned file temporarily
+    # Save cleaned audio
     cleaned_path = "cleaned_audio.wav"
     sf.write(cleaned_path, cleaned, sr)
 
-    # Transcribe
+    # Run ASR
     try:
         result = asr(cleaned_path)
         text = result.get("text", "").strip()
     except Exception as e:
-        text = f"❌ Transcription failed: {e}"
+        text = f"❌ Error during transcription: {e}"
 
+    # Return text + cleaned audio (as tuple for Gradio Audio)
     return text, (sr, cleaned)
 
 
