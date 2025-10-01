@@ -20,7 +20,8 @@ You can try the live demo on Hugging Face Spaces:
 (https://huggingface.co/spaces/Prachumm/meeting-summarizer)
 
 
-**Technologies Used**
+**Technologies Used** :- 
+
 -Python 3.10+
 -Gradio
  – > Web UI for audio upload/recording
@@ -31,15 +32,5 @@ You can try the live demo on Hugging Face Spaces:
 -SciPy
  – > Audio resampling
 
----
-title: Meeting Summarizer
-emoji: 📈
-colorFrom: red
-colorTo: green
-sdk: gradio
-sdk_version: 5.47.2
-app_file: app.py
-pinned: false
----
 
 Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
