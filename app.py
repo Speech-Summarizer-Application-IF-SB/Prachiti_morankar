@@ -22,7 +22,8 @@ def denoise_and_transcribe(audio):
         data = np.mean(data, axis=1)
 
     # Normalize
-    data = data / (np.max(np.abs(data)) + 1e-9)
+    if np.max(np.abs(data)) > 0:
+        data = data / np.max(np.abs(data))
 
     # Noise reduction
     try:
@@ -30,11 +31,12 @@ def denoise_and_transcribe(audio):
         noise_clip = data[:noise_len]
         cleaned = nr.reduce_noise(y=data, y_noise=noise_clip, sr=sr)
     except Exception as e:
-        cleaned = data
         print("Noise reduction failed:", e)
+        cleaned = data
 
     # Normalize cleaned
-    cleaned = cleaned / (np.max(np.abs(cleaned)) + 1e-9)
+    if np.max(np.abs(cleaned)) > 0:
+        cleaned = cleaned / np.max(np.abs(cleaned))
     cleaned = cleaned.astype(np.float32)
 
     # ✅ Resample if not 16kHz
@@ -63,9 +65,10 @@ with gr.Blocks() as demo:
 
     with gr.Row():
         transcript_out = gr.Textbox(label="Transcript", lines=8)
-        cleaned_audio_out = gr.Audio(label="Cleaned Audio")
+        cleaned_audio_out = gr.Audio(label="Cleaned Audio", type="numpy")
 
     run_btn.click(denoise_and_transcribe, inputs=audio_in, outputs=[transcript_out, cleaned_audio_out])
 
-if _name_ == "_main_":
+
+if __name__ == "__main__":   # ✅ fixed here
     demo.launch()
