@@ -1,66 +1,67 @@
 import os
-import tempfile
 import numpy as np
 import soundfile as sf
 import noisereduce as nr
 import gradio as gr
 from transformers import pipeline
 
-DEFAULT_ASR_MODEL = "facebook/wav2vec2-base-960h"
+# Use Whisper-tiny (fast, works on CPU Spaces)
+DEFAULT_ASR_MODEL = "openai/whisper-tiny"
 
+# Load ASR pipeline once
 asr = pipeline("automatic-speech-recognition", model=os.environ.get("ASR_MODEL", DEFAULT_ASR_MODEL))
 
-
 def denoise_and_transcribe(audio_filepath):
-   
+    """
+    Input: uploaded audio file path
+    Output: transcript + cleaned audio
+    """
     if not audio_filepath:
-        return "⚠️ No audio received", None
+        return "⚠️ No audio provided", None
 
-  
+    # Read audio
     data, sr = sf.read(audio_filepath)
- 
+
+    # Convert stereo → mono
     if data.ndim > 1:
         data = np.mean(data, axis=1)
 
+    # Take first 0.5s as noise sample
     noise_len = int(0.5 * sr)
-    noise_len = min(noise_len, max(1, len(data)//2))
+    noise_len = min(noise_len, len(data) // 2)
     noise_clip = data[:noise_len]
 
-    data = data + 1e-9
-
-
+    # Noise reduction
     cleaned = nr.reduce_noise(y=data, sr=sr, y_noise=noise_clip)
 
-    rms = np.sqrt(np.mean(cleaned**2))
-    if rms > 0:
-        target_db = -20.0
-        rms_db = 20 * np.log10(rms)
-        gain = target_db - rms_db
-        cleaned = cleaned * (10 ** (gain / 20))
-
-
-    base = os.path.splitext(os.path.basename(audio_filepath))[0]
-    cleaned_path = f"cleaned_{base}.wav"
+    # Save cleaned file
+    cleaned_path = "cleaned_audio.wav"
     sf.write(cleaned_path, cleaned, sr)
 
+    # Run transcription
     try:
-        out = asr(cleaned_path)
-        text = out.get("text", "").strip()
+        result = asr(cleaned_path)
+        text = result.get("text", "").strip()
     except Exception as e:
         text = f"❌ Transcription failed: {e}"
 
     return text, cleaned_path
 
 
-with gr.Blocks(title="Meeting Summarizer (Milestone 1)") as demo:
-    gr.Markdown("# 🎙 Meeting Summarizer — Noise reduction + ASR\nUpload or record audio; the app denoises it with `noisereduce` and transcribes with a Hugging Face ASR model.")
+# Gradio UI
+with gr.Blocks() as demo:
+    gr.Markdown("# 🎙 Meeting Summarizer — Milestone 1\nUpload audio → Clean noise → Get transcript")
+
     with gr.Row():
-        audio_in = gr.Audio(source="upload", type="filepath", label="Upload audio (wav/mp3)")
-        btn = gr.Button("Denoise & Transcribe")
+        audio_in = gr.Audio(type="filepath", label="Upload your audio (wav/mp3)")
+        run_btn = gr.Button("Process")
+
     with gr.Row():
         transcript_out = gr.Textbox(label="Transcript", lines=8)
-        cleaned_audio_out = gr.Audio(label="Cleaned audio")
-    btn.click(denoise_and_transcribe, inputs=audio_in, outputs=[transcript_out, cleaned_audio_out])
+        cleaned_audio_out = gr.Audio(label="Cleaned Audio")
+
+    run_btn.click(denoise_and_transcribe, inputs=audio_in, outputs=[transcript_out, cleaned_audio_out])
+
 
 if __name__ == "__main__":
     demo.launch()
