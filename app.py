@@ -2,7 +2,7 @@ import numpy as np
 import noisereduce as nr
 import gradio as gr
 from transformers import pipeline
-from scipy.signal import resample  # ✅ for resampling without torchaudio
+from scipy.signal import resample
 
 # Whisper model
 DEFAULT_ASR_MODEL = "openai/whisper-tiny"
@@ -21,8 +21,9 @@ def denoise_and_transcribe(audio):
     if data.ndim > 1:
         data = np.mean(data, axis=1)
 
-    # Normalize
-    data = data / (np.max(np.abs(data)) + 1e-9)
+    # Normalize input audio
+    if np.max(np.abs(data)) > 0:
+        data = data / np.max(np.abs(data))
 
     # Noise reduction
     try:
@@ -33,11 +34,12 @@ def denoise_and_transcribe(audio):
         cleaned = data
         print("Noise reduction failed:", e)
 
-    # Normalize cleaned
-    cleaned = cleaned / (np.max(np.abs(cleaned)) + 1e-9)
+    # Normalize cleaned audio
+    if np.max(np.abs(cleaned)) > 0:
+        cleaned = cleaned / np.max(np.abs(cleaned))
     cleaned = cleaned.astype(np.float32)
 
-    # ✅ Resample if not 16kHz
+    # Resample to 16kHz for Whisper
     if sr != TARGET_SR:
         num_samples = int(len(cleaned) * TARGET_SR / sr)
         cleaned = resample(cleaned, num_samples)
@@ -50,20 +52,25 @@ def denoise_and_transcribe(audio):
     except Exception as e:
         text = f"❌ Error during transcription: {e}"
 
+    # ✅ Return cleaned audio properly for Gradio
     return text, (sr, cleaned)
 
 
 # Gradio UI
 with gr.Blocks() as demo:
-    gr.Markdown("# 🎙 Meeting Summarizer\nUpload audio → Clean noise → Get transcript")
+    gr.Markdown("# 🎙 Meeting Summarizer\nUpload audio or record → Clean noise → Get transcript")
 
     with gr.Row():
-        audio_in = gr.Audio(label="Upload your audio (wav/mp3)", type="numpy")
+        audio_in = gr.Audio(
+            label="🎤 Upload or record audio", 
+            type="numpy", 
+            source="microphone"  # ✅ allows recording
+        )
         run_btn = gr.Button("Process")
 
     with gr.Row():
         transcript_out = gr.Textbox(label="Transcript", lines=8)
-        cleaned_audio_out = gr.Audio(label="Cleaned Audio")
+        cleaned_audio_out = gr.Audio(label="🔊 Cleaned Audio", type="numpy")
 
     run_btn.click(denoise_and_transcribe, inputs=audio_in, outputs=[transcript_out, cleaned_audio_out])
 
