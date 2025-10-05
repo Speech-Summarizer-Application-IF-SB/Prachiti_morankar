@@ -1,4 +1,4 @@
-# 🎙 Meeting Summarizer Application
+# Infosys Springboard internship : Milestone-1 
 
 A web application that **uploads or records meeting audio, removes background noise, and transcribes it to text** using state-of-the-art speech recognition and noise reduction.
 
@@ -12,12 +12,6 @@ A web application that **uploads or records meeting audio, removes background no
 - Play back cleaned audio.
 - Lightweight and fast, works on CPU.
 
----
-
-**Demo**
-
-You can try the live demo on Hugging Face Spaces:  
-(https://huggingface.co/spaces/Prachumm/meeting-summarizer)
 
 
 **Technologies Used** :- 
