@@ -1,4 +1,4 @@
-# Infosys Springboard internship : Milestone-1 
+# Infosys Springboard Internship : Milestone-1 
 
 A web application that **uploads or records meeting audio, removes background noise, and transcribes it to text** using state-of-the-art speech recognition and noise reduction.
 
