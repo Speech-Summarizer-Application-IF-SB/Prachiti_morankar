@@ -4,3 +4,5 @@ openai
 pydub
 soundfile
 numpy
+python-dotenv
+
