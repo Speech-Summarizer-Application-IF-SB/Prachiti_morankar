@@ -1,4 +1,4 @@
-# 🎙️ Speech-to-Text + Summarizer (Milestone 4 – BuildSmart)
+# 🎙️ Speech-to-Text + Summarizer (Milestone 4 )
 
 ## 📘 Overview
 This project is a **Streamlit-based AI dashboard** that converts speech to text, summarizes the transcript, and exports or emails the results.  
