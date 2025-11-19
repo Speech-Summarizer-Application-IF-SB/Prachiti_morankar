@@ -32,3 +32,6 @@ TF-IDF Summarizer (Scikit-learn + NumPy)
 📄 Export (.md / .pdf)     ✉️ Email Sender
         ↓
 🗂️ Structured Logging (.json / .parquet)
+
+📄 [Download Milestone 4 PDF](Milestone.pdf)
+
